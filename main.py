@@ -8,6 +8,18 @@ ROOTDIR = os.path.dirname(os.path.abspath(__file__))
 INPUTDIR = os.path.join(ROOTDIR, "input\\")
 OUTPUTDIR = os.path.join(ROOTDIR, "output\\")
 
+IMAGE_EXTENSIONS = [
+    "png", "jpg", "jpeg", "webp", "avif",
+]
+
+
+def is_image(file: DirEntry):
+    """
+    Checks if file extension is in image extensions, 
+    ultimately returning if file is an image
+    """
+    return file.name.split('.')[-1] in IMAGE_EXTENSIONS
+
 
 def create_dir(date: datetime) -> str:
     """Creates directory by date, if it still does not exist"""
@@ -36,7 +48,7 @@ def create_from_entry(entry: DirEntry):
 
 
 def preorder(directory: DirEntry) -> Generator[DirEntry]:
-    """Searches for all photos inside the input dir"""
+    """Searches for all images inside the input dir"""
 
     for entry in directory:
         if not os.path.isdir(entry):
@@ -49,9 +61,22 @@ def preorder(directory: DirEntry) -> Generator[DirEntry]:
 
 
 def sort():
+    """
+    Main function, responsible by sorting all images from input directory 
+    to the output directory, grouping by year, and then by month
+    """
+
+    # Gets all the files in the input directory
     files = preorder(os.scandir(INPUTDIR))
-    for file in files:
+
+    # Filters the files, keeping only the images
+    images = [file for file in files if is_image(file)]
+
+    for file in images:
+        # Makes sure the correct path exists for file, and gets the path
         dst = create_from_entry(file)
+
+        # Copies the file from the input dir to the output dir, sorted and with its metadata
         shutil.copy2(file.path, dst)
 
 
