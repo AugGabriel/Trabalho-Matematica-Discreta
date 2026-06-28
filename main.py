@@ -14,6 +14,24 @@ IMAGE_EXTENSIONS = [
 """Image extensions accepted by the system"""
 
 
+def depth_first_search(directory: DirEntry) -> Generator[DirEntry]:
+    """
+    Searches for all files inside the input dir.
+
+    It iterates through all entries inside the directory; 
+    if entry is a file, the function yields it; 
+    else if it is a directory, it recursively, depth-first searches for all images inside.
+    """
+
+    for entry in directory:
+        if not os.path.isdir(entry):
+            # Entry is a file
+            yield entry
+        else:
+            # Entry is a directory
+            yield from depth_first_search(os.scandir(os.path.abspath(entry)))
+
+
 def is_image(file: DirEntry):
     """
     Checks if file extension is in image extensions, 
@@ -54,24 +72,6 @@ def create_file_path(file: DirEntry, output: str):
     return create_date_path(datetime.fromtimestamp(os.path.getctime(file)), output)
 
 
-def depth_first_search(directory: DirEntry) -> Generator[DirEntry]:
-    """
-    Searches for all files inside the input dir.
-
-    It iterates through all entries inside the directory; 
-    if entry is a file, the function yields it; 
-    else if it is a directory, it recursively, depth-first searches for all images inside.
-    """
-
-    for entry in directory:
-        if not os.path.isdir(entry):
-            # Entry is a file
-            yield entry
-        else:
-            # Entry is a directory
-            yield from depth_first_search(os.scandir(os.path.abspath(entry)))
-
-
 def sort(input: str, output: str):
     """
     Sorts all images from the input directory 
@@ -93,6 +93,7 @@ def sort(input: str, output: str):
 
 
 def main():
+    """Connects the tools to their use"""
     sort(INPUTDIR, OUTPUTDIR)
 
 
