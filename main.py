@@ -13,6 +13,11 @@ IMAGE_EXTENSIONS = [
 ]
 """Image extensions accepted by the system"""
 
+GROUP_BY_DAY = False
+"""
+Configurates if the system shall group by the day, inside the month directory
+"""
+
 
 def depth_first_search(directory: Path) -> Iterator[Path]:
     """
@@ -60,7 +65,16 @@ def create_date_path(date: datetime, output: Path) -> Path:
     if not month_path.exists():
         os.mkdir(month_path)
 
-    # Returns the path
+    # Creates the day dir
+    if GROUP_BY_DAY:
+        day_path = month_path / f"{date.day:02d}"
+        if not day_path.exists():
+            os.mkdir(day_path)
+
+        # Returns the path, grouping by day
+        return day_path
+
+    # Returns the path, not grouping by day
     return month_path
 
 
