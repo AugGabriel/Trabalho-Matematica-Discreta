@@ -11,25 +11,29 @@ OUTPUTDIR = os.path.join(ROOTDIR, "output\\")
 IMAGE_EXTENSIONS = [
     "png", "jpg", "jpeg", "webp", "avif",
 ]
+"""Image extensions accepted by the system"""
 
 
 def is_image(file: DirEntry):
     """
     Checks if file extension is in image extensions, 
-    ultimately returning if file is an image
+    ultimately returning if file is an image accepted by the system
     """
     return file.name.split('.')[-1] in IMAGE_EXTENSIONS
 
 
-def create_dir(date: datetime) -> str:
-    """Creates directory by date, if it still does not exist"""
+def create_date_path(date: datetime, output: str) -> str:
+    """
+    Creates the path to that date in the format year/month/, 
+    if it still does not exist
+    """
 
     # Makes sure the output dir exists
-    if not os.path.exists(OUTPUTDIR):
-        os.mkdir(OUTPUTDIR)
+    if not os.path.exists(output):
+        os.mkdir(output)
 
     # Creates the year dir
-    year_path = os.path.join(OUTPUTDIR, f"{date.year:4d}\\")
+    year_path = os.path.join(output, f"{date.year:4d}\\")
     if not os.path.exists(year_path):
         os.mkdir(year_path)
 
@@ -42,45 +46,55 @@ def create_dir(date: datetime) -> str:
     return month_path
 
 
-def create_from_entry(entry: DirEntry):
-    """Creates directory from file's creation date, using create_dir"""
-    return create_dir(datetime.fromtimestamp(os.path.getctime(entry)))
+def create_file_path(file: DirEntry, output: str):
+    """
+    Creates path to the file from its creation date.
+    The output will be the prefix of the path
+    """
+    return create_date_path(datetime.fromtimestamp(os.path.getctime(file)), output)
 
 
-def preorder(directory: DirEntry) -> Generator[DirEntry]:
-    """Searches for all images inside the input dir"""
+def depth_first_search(directory: DirEntry) -> Generator[DirEntry]:
+    """
+    Searches for all files inside the input dir.
+
+    It iterates through all entries inside the directory; 
+    if entry is a file, the function yields it; 
+    else if it is a directory, it recursively, depth-first searches for all images inside.
+    """
 
     for entry in directory:
         if not os.path.isdir(entry):
             # Entry is a file
-            # date = datetime.fromtimestamp(os.path.getctime(entry)).strftime("%Y/%m")
             yield entry
         else:
             # Entry is a directory
-            yield from preorder(os.scandir(os.path.abspath(entry)))
+            yield from depth_first_search(os.scandir(os.path.abspath(entry)))
 
 
-def sort():
+def sort(input: str, output: str):
     """
-    Main function, responsible by sorting all images from input directory 
+    Sorts all images from the input directory 
     to the output directory, grouping by year, and then by month
     """
 
     # Gets all the files in the input directory
-    files = preorder(os.scandir(INPUTDIR))
+    files = depth_first_search(os.scandir(input))
 
     # Filters the files, keeping only the images
     images = [file for file in files if is_image(file)]
 
     for file in images:
         # Makes sure the correct path exists for file, and gets the path
-        dst = create_from_entry(file)
+        dst = create_file_path(file, output)
 
         # Copies the file from the input dir to the output dir, sorted and with its metadata
         shutil.copy2(file.path, dst)
 
 
-# simulation = [1, 2, 3, [4, 5, [6, 7, 8], 9, 10], 11, [12, 13]]
-# simulation = os.scandir(INPUTDIR)
+def main():
+    sort(INPUTDIR, OUTPUTDIR)
 
-sort()
+
+if __name__ == "__main__":
+    sort()
