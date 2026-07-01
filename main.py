@@ -55,8 +55,7 @@ def create_date_path(date: datetime, output: Path) -> Path:
     """
     
     # Makes sure the output directory exists
-    if not output.exists():
-        os.mkdir(output)
+    output.mkdir(exist_ok=True)
     
     # Builds the path to the month directory
     month_path = output / f"{date.year:4d}" / f"{date.month:02d}"
