@@ -9,23 +9,27 @@ INPUTDIR = ROOTDIR / "input"
 OUTPUTDIR = ROOTDIR / "output"
 
 IMAGE_EXTENSIONS = [
-    "png", "jpg", "jpeg", "webp", "avif",
+    ".png", 
+    ".jpg", 
+    ".jpeg", 
+    ".webp", 
+    ".avif",
 ]
 """Image extensions accepted by the system"""
 
 GROUP_BY_DAY = False
 """
-Configurates if the system shall group by the day, inside the month directory
+Determines whether images should be grouped by day inside each month directory
 """
 
 
 def depth_first_search(directory: Path) -> Iterator[Path]:
     """
-    Searches for all files inside the input dir.
+    Searches recursively for all files inside the given directory.
 
     It iterates through all entries inside the directory; 
-    if entry is a file, the function yields it; 
-    else if it is a directory, it recursively, depth-first searches for all images inside.
+    if an entry is a file, it is yielded; 
+    Otherwise, if it is a directory, the function recursively performs a depth-first search for files inside it.
     """
 
     for entry in directory.iterdir():
@@ -39,48 +43,44 @@ def depth_first_search(directory: Path) -> Iterator[Path]:
 
 def is_image(file: Path):
     """
-    Checks if file extension is in image extensions, 
-    ultimately returning if file is an image accepted by the system
+    Returns whether the file has an image extension supported by the system
     """
-    return file.name.split('.')[-1] in IMAGE_EXTENSIONS
+    return file.suffix.lower() in IMAGE_EXTENSIONS
 
 
 def create_date_path(date: datetime, output: Path) -> Path:
     """
-    Creates the path to that date in the format year/month/, 
+    Creates the directory structure for the given date in the format year/month/, and optionally day/, 
     if it still does not exist
     """
     
-    # Makes sure the output dir exists
+    # Makes sure the output directory exists
     if not output.exists():
         os.mkdir(output)
+    
+    # Builds the path to the month directory
+    month_path = output / f"{date.year:4d}" / f"{date.month:02d}"
 
-    # Creates the year dir
-    year_path = output / f"{date.year:4d}"
-    if not year_path.exists():
-        os.mkdir(year_path)
-
-    # Creates the month dir
-    month_path = year_path / f"{date.month:02d}"
-    if not month_path.exists():
-        os.mkdir(month_path)
-
-    # Creates the day dir
+    # Gets the path for the day directory
     if GROUP_BY_DAY:
         day_path = month_path / f"{date.day:02d}"
-        if not day_path.exists():
-            os.mkdir(day_path)
+
+        # Creates the path for the day directory
+        day_path.mkdir(parents=True, exist_ok=True)
 
         # Returns the path, grouping by day
         return day_path
+
+    # Creates the path for the month directory
+    month_path.mkdir(parents=True, exist_ok=True)
 
     # Returns the path, not grouping by day
     return month_path
 
 
-def create_file_path(file: Path, output: str):
+def create_file_path(file: Path, output: Path):
     """
-    Creates path to the file from its creation date.
+    Creates the destination path to the file based on it's creation date.
     The output will be the prefix of the path
     """
     return create_date_path(datetime.fromtimestamp(os.path.getctime(file)), output)
@@ -88,21 +88,21 @@ def create_file_path(file: Path, output: str):
 
 def sort(input: Path, output: Path):
     """
-    Sorts all images from the input directory 
+    Organizes all images from the input directory 
     to the output directory, grouping by year, and then by month
     """
 
-    # Gets all the files in the input directory
-    files = depth_first_search(input)
+    # Iterates through every file in the input directory
+    for file in depth_first_search(input):
 
-    # Filters the files, keeping only the images
-    images = [file for file in files if is_image(file)]
+        # Filters the files, keeping only the images
+        if not is_image(file):
+            continue
 
-    for file in images:
         # Makes sure the correct path exists for file, and gets the path
         dst = create_file_path(file, output)
 
-        # Copies the file from the input dir to the output dir, sorted and with its metadata
+        # Copies the file from the input directory to the output directory, sorted and with its metadata
         shutil.copy2(file, dst)
 
 
