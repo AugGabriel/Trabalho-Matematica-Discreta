@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 import shutil
 from datetime import datetime
@@ -77,6 +78,34 @@ def create_date_path(date: datetime, output: Path) -> Path:
     return month_path
 
 
+def get_ctime_from_name(file: Path):
+    """
+    Returns the file's creation time based on its name.
+    """
+
+    match = re.match(r"[0-9]{2}-[0-9]{2}-[0-9]{4}", file.name)
+
+    if match:
+        day, month, year = map(
+            int, 
+            file.name[match.start():match.end()].split("-")
+        )
+        dt = datetime(year=year, month=month, day=day)
+        print(dt)
+    else:
+        print("not match")
+
+
+def get_file_ctime():
+    """
+    Returns the file's creation time.
+
+    The function gets the time from the file's name, and returns the 
+    minimum between this time and the file's creation time according
+    to the os.
+    """
+
+
 def create_file_path(file: Path, output: Path):
     """
     Creates the destination path to the file based on it's creation date.
@@ -88,7 +117,7 @@ def create_file_path(file: Path, output: Path):
 def sort(input: Path, output: Path):
     """
     Organizes all images from the input directory 
-    to the output directory, grouping by year, and then by month
+    to the output directory, grouping by year, and then by month.
     """
 
     # Iterates through every file in the input directory
@@ -111,4 +140,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    [get_ctime_from_name(file) for file in depth_first_search(INPUTDIR)]
